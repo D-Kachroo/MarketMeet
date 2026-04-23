@@ -74,7 +74,7 @@ with st.sidebar:
     )
 
     holdings = st.slider(
-        'Target number of stocks',
+        'Number of stocks/holdings',
         min_value=8,
         max_value=25,
         value=15,
