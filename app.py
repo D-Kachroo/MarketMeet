@@ -173,7 +173,7 @@ try:
             use_container_width=True,
         )
 
-    st.subheader('Stocks Metadata')
+    st.subheader('Metadata of Stocks')
 
     metrics_view = metrics.loc[selected].copy()[[
         'Sector',
