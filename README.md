@@ -1,6 +1,6 @@
 # MarketMeet
 
-MarketMeet is a Streamlit web app that builds a CAD equity portfolio designed to track the average of the S&P 500 and S&P/TSX Composite while controlling volatility and tracking error.
+MarketMeet is a Streamlit web app that builds a CAD-equity portfolio designed to track the average of the S&P 500 and the S&P/TSX Composite while controlling volatility and tracking error.
 
 ## Features
 
@@ -9,17 +9,3 @@ MarketMeet is a Streamlit web app that builds a CAD equity portfolio designed to
 - sector diversification logic
 - portfolio weights, sector mix, and cumulative growth charts
 - downloadable CSV output
-
-## Run locally
-
-```bash
-pip install -r requirements.txt
-streamlit run app.py
-```
-
-## Deploy
-
-1. Push this folder to GitHub.
-2. Create a new app in Streamlit Community Cloud.
-3. Point the app to `app.py`.
-4. Deploy.
