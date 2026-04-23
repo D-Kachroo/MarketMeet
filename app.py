@@ -6,10 +6,10 @@ from datetime import date
 import pandas as pd
 import streamlit as st
 
-from src.config import DEFAULT_START, DEFAULT_UNIVERSE
-from src.data import build_metrics, clean_tickers, download_market_data, fetch_metadata, get_cadusd_rate
-from src.optimizer import build_portfolio_table, choose_portfolio, optimize_weights, portfolio_stats
-from src.ui import cumulative_chart, metric_card, sector_donut, weights_bar
+from config import DEFAULT_START, DEFAULT_UNIVERSE
+from data import build_metrics, clean_tickers, download_market_data, fetch_metadata, get_cadusd_rate
+from optimizer import build_portfolio_table, choose_portfolio, optimize_weights, portfolio_stats
+from ui import cumulative_chart, metric_card, sector_donut, weights_bar
 
 st.set_page_config(page_title='MarketMeet', page_icon='📈', layout='wide')
 
