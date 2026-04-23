@@ -74,14 +74,14 @@ with st.sidebar:
     )
 
     holdings = st.slider(
-        'Number of stocks/holdings',
+        'Number of Stocks/Holdings:',
         min_value=8,
         max_value=25,
         value=15,
     )
 
     risk_weight = st.slider(
-        'Volatility weight',
+        'Volatility Weighting:',
         min_value=0.0,
         max_value=2.0,
         value=0.8,
@@ -92,7 +92,7 @@ with st.sidebar:
     run = st.button('Generate portfolio', use_container_width=True)
 
 if not run:
-    st.info('Set the inputs in the sidebar and click Generate portfolio.')
+    st.info('Set the inputs in the sidebar and click "Generate Portfolio".')
     st.stop()
 
 try:
@@ -156,7 +156,7 @@ try:
         st.plotly_chart(weights_bar(portfolio), use_container_width=True)
 
     with right:
-        st.subheader('Portfolio allocation')
+        st.subheader('Recommended Portfolio')
 
         view = portfolio.copy()
         for column in ['PriceCAD', 'Shares', 'ValueCAD', 'WeightPct']:
@@ -166,14 +166,14 @@ try:
 
         csv = portfolio.to_csv(index=False).encode('utf-8')
         st.download_button(
-            'Download portfolio CSV',
+            'Download CSV file',
             data=csv,
             file_name='marketmeet_portfolio.csv',
             mime='text/csv',
             use_container_width=True,
         )
 
-    st.subheader('Selected stock metrics')
+    st.subheader('Stocks Metadata')
 
     metrics_view = metrics.loc[selected].copy()[[
         'Sector',
