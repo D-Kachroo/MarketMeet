@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from scipy.optimize import minimize
 
-from .config import MAX_WEIGHT, MIN_AVG_VOLUME, MIN_CORRELATION, MIN_WEIGHT, PORTFOLIO_VALUE_CAD
+from config import MAX_WEIGHT, MIN_AVG_VOLUME, MIN_CORRELATION, MIN_WEIGHT, PORTFOLIO_VALUE_CAD
 
 
 def select_candidates(metrics: pd.DataFrame) -> pd.DataFrame:
