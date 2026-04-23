@@ -123,11 +123,11 @@ try:
 
     top = st.columns(5)
     cards = [
-        ('Stocks selected', str(len(portfolio))),
-        ('Expected daily return', f"{stats['ExpectedDailyReturnPct']:.2f}%"),
-        ('Daily volatility', f"{stats['DailyVolatilityPct']:.2f}%"),
-        ('Portfolio beta', f"{stats['Beta']:.2f}"),
-        ('Tracking error', f"{stats['TrackingErrorPct']:.2f}%"),
+        ('# of Stocks', str(len(portfolio))),
+        ('Expected Return (Daily)', f"{stats['ExpectedDailyReturnPct']:.2f}%"),
+        ('Volatility (Daily)', f"{stats['DailyVolatilityPct']:.2f}%"),
+        ('Beta', f"{stats['Beta']:.2f}"),
+        ('Tracking Error', f"{stats['TrackingErrorPct']:.2f}%"),
     ]
 
     for column, (label, value) in zip(top, cards):
