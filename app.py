@@ -55,7 +55,7 @@ st.markdown(
 )
 
 st.markdown('# MarketMeet')
-st.caption('Portfolio optimization and benchmark tracking with a cleaner front end and a faster workflow.')
+st.caption('Developed By: David Kachroo, Tanvi Batchu, and Johan Naresh')
 
 with st.sidebar:
     st.subheader('Controls')
