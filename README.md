@@ -23,7 +23,3 @@ streamlit run app.py
 2. Create a new app in Streamlit Community Cloud.
 3. Point the app to `app.py`.
 4. Deploy.
-
-## Notes
-
-The original notebook included assignment-specific markdown, print statements, and notebook-only output blocks. This version removes that clutter and packages the core logic into a cleaner app structure.
