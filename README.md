@@ -4,7 +4,7 @@ MarketMeet is a Streamlit web app that builds a CAD equity portfolio designed to
 
 ## Features
 
-- live market data from Yahoo Finance
+- 24/7 live market data from Yahoo Finance
 - benchmark-aware portfolio optimization
 - sector diversification logic
 - portfolio weights, sector mix, and cumulative growth charts
