@@ -69,9 +69,24 @@ def sector_donut(portfolio: pd.DataFrame, metrics: pd.DataFrame):
     metric_view['Ticker'] = metric_view['Ticker'].astype(str)
 
     joined = portfolio_view.merge(metric_view, on='Ticker', how='left')
-    sector = joined.groupby('Sector', as_index=False)['Weight%'].sum().sort_values('Weight%', ascending=False)
 
-    fig = px.pie(sector, names='Sector', values='Weight%', hole=0.58)
+    joined['Sector'] = joined['Sector'].apply(
+        lambda value: value if pd.notna(value) and str(value).strip() != '' else 'Sector Data Unavailable'
+    )
+
+    sector = (
+        joined.groupby('Sector', as_index=False, dropna=False)['Weight%']
+        .sum()
+        .sort_values('Weight%', ascending=False)
+    )
+
+    fig = px.pie(
+        sector,
+        names='Sector',
+        values='Weight%',
+        hole=0.58,
+    )
+
     return _base_layout(fig, 'Sector Allocation', 420)
 
 
