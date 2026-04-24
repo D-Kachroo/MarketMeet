@@ -114,7 +114,7 @@ try:
     tickers = clean_tickers(raw_tickers)
 
     if len(tickers) < holdings:
-        st.error('The ticker list must contain at least as many symbols as the target number of stocks.')
+        st.error('The ticker list must contain at least as many symbols as the number of stocks.')
         st.stop()
 
     with st.spinner('Downloading yfinance market data and generating the portfolio...'):
@@ -126,7 +126,7 @@ try:
 
         selected = choose_portfolio(metrics, holdings)
         if not selected:
-            st.error('No stocks passed the liquidity and benchmark-correlation filters. Add more tickers or lower the target number of stocks.')
+            st.error('No stocks passed the liquidity and benchmark-correlation filters. Add more tickers or lower the number of stocks.')
             st.stop()
 
         selected_prices = prices[selected]
