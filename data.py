@@ -183,7 +183,14 @@ def build_metrics(
     metadata['Ticker'] = metadata['Ticker'].astype(str)
 
     joined = metrics.merge(metadata, on='Ticker', how='left')
-    joined = joined.dropna(subset=['Sector', 'Industry'], how='any')
+
+    joined['Sector'] = joined['Sector'].fillna('Unknown')
+    joined['Industry'] = joined['Industry'].fillna('Unknown')
+    joined['MarketCapCAD'] = joined['MarketCapCAD'].fillna(0)
+    joined['SmallCap'] = joined['SmallCap'].fillna(False).astype(bool)
+    joined['LargeCap'] = joined['LargeCap'].fillna(False).astype(bool)
+
+    joined = joined.dropna(subset=['AvgVolume', 'Correlation', 'Beta'], how='any')
     joined = joined.sort_values(['Correlation', 'AvgVolume'], ascending=[False, False])
 
     return joined.set_index('Ticker')
