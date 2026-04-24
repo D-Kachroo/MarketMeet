@@ -121,9 +121,35 @@ async def _fetch_single_metadata(ticker: str, cadusd_rate: float) -> dict:
 
 
 async def fetch_metadata(tickers: list[str], cadusd_rate: float) -> pd.DataFrame:
-    rows = await asyncio.gather(*[_fetch_single_metadata(ticker, cadusd_rate) for ticker in tickers])
-    frame = pd.DataFrame(rows)
+    final_rows: dict[str, dict] = {}
+
+    for _ in range(3):
+        missing = [
+            ticker for ticker in tickers
+            if ticker not in final_rows
+            or pd.isna(final_rows[ticker].get('Sector'))
+            or pd.isna(final_rows[ticker].get('Industry'))
+        ]
+
+        if not missing:
+            break
+
+        rows = await asyncio.gather(*[_fetch_single_metadata(ticker, cadusd_rate) for ticker in missing])
+
+        for row in rows:
+            ticker = str(row['Ticker'])
+
+            if ticker not in final_rows:
+                final_rows[ticker] = row
+
+            if pd.notna(row.get('Sector')) and pd.notna(row.get('Industry')):
+                final_rows[ticker] = row
+
+        await asyncio.sleep(0.75)
+
+    frame = pd.DataFrame(final_rows.values())
     frame['Ticker'] = frame['Ticker'].astype(str)
+
     return frame.set_index('Ticker')
 
 
@@ -183,7 +209,13 @@ def build_metrics(
     metadata['Ticker'] = metadata['Ticker'].astype(str)
 
     joined = metrics.merge(metadata, on='Ticker', how='left')
-    joined = joined.dropna(subset=['Sector', 'Industry'], how='any')
+
+    joined = joined.dropna(subset=['AvgVolume', 'Correlation', 'Beta'], how='any')
+    joined_with_sectors = joined.dropna(subset=['Sector', 'Industry'], how='any')
+
+    if not joined_with_sectors.empty:
+        joined = joined_with_sectors
+
     joined = joined.sort_values(['Correlation', 'AvgVolume'], ascending=[False, False])
 
     return joined.set_index('Ticker')
