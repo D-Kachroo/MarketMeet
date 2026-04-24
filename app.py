@@ -58,7 +58,7 @@ st.markdown('# MarketMeet')
 st.caption('Developers: David Kachroo, Tanvi Batchu, and Johan Naresh')
 
 with st.sidebar:
-    st.subheader('Controls')
+    st.subheader('Sidebar Controls')
 
     raw_tickers = st.text_area(
         'Ticker list',
