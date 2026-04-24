@@ -124,10 +124,21 @@ try:
         metadata = asyncio.run(fetch_metadata(list(prices.columns), cadusd_rate))
         metrics = build_metrics(prices, volume, benchmark_returns, metadata)
 
-        selected = choose_portfolio(metrics, holdings)
-        if not selected:
-            st.error('No stocks passed the liquidity and benchmark-correlation filters. Add more tickers or lower the number of stocks.')
+        if metrics.empty:
+            st.warning('Market data was incomplete. Refresh the page or try again in a moment.')
             st.stop()
+
+        selected = choose_portfolio(metrics, holdings)
+
+        if not selected:
+            relaxed_holdings = min(holdings, len(metrics))
+
+            if relaxed_holdings > 0:
+                selected = choose_portfolio(metrics, relaxed_holdings)
+
+            if not selected:
+                st.warning('Market data was incomplete. Refresh the page or try again in a moment.')
+                st.stop()
 
         selected_prices = prices[selected]
         selected_returns = selected_prices.pct_change().dropna()
