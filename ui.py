@@ -53,9 +53,9 @@ def sector_donut(portfolio: pd.DataFrame, metrics: pd.DataFrame):
     metric_view['Ticker'] = metric_view['Ticker'].astype(str)
 
     joined = portfolio_view.merge(metric_view, on='Ticker', how='left')
-    sector = joined.groupby('Sector', as_index=False)['WeightPct'].sum().sort_values('WeightPct', ascending=False)
+    sector = joined.groupby('Sector', as_index=False)['Weight%'].sum().sort_values('Weight%', ascending=False)
 
-    fig = px.pie(sector, names='Sector', values='WeightPct', hole=0.58, title='Sector Allocation')
+    fig = px.pie(sector, names='Sector', values='Weight%', hole=0.58, title='Sector Allocation')
     return _base_layout(fig, 'Sector Allocation', 420)
 
 
