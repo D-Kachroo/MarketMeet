@@ -120,6 +120,10 @@ try:
     with st.spinner('Downloading yfinance market data and generating the portfolio...'):
         prices, volume, benchmark, benchmark_returns, invalid = download_market_data(tickers, str(start_date))
 
+        if prices.empty:
+            st.warning('No usable price data was found. Check the ticker list or try a different start date.')
+            st.stop()
+
         cadusd_rate = get_cadusd_rate()
         metadata = asyncio.run(fetch_metadata(list(prices.columns), cadusd_rate))
         metrics = build_metrics(prices, volume, benchmark_returns, metadata)
@@ -140,11 +144,22 @@ try:
                 st.warning('No usable price data was found. Check the ticker list or try a different start date.')
                 st.stop()
 
-        selected_prices = prices[selected]
-        selected_returns = selected_prices.pct_change().dropna()
+        selected_prices = prices.reindex(columns=selected).dropna(how='all')
+
+        if selected_prices.empty:
+            st.warning('No usable price data was found. Check the ticker list or try a different start date.')
+            st.stop()
+
+        selected_returns = selected_prices.pct_change(fill_method=None).replace([float('inf'), float('-inf')], pd.NA)
+        selected_returns = selected_returns.dropna(how='all').fillna(0.0)
 
         weights = optimize_weights(selected_returns, benchmark_returns, risk_weight)
         portfolio = build_portfolio_table(selected_prices.iloc[-1], weights, cadusd_rate)
+
+        if portfolio.empty:
+            st.warning('No usable price data was found. Check the ticker list or try a different start date.')
+            st.stop()
+
         stats = portfolio_stats(selected_returns, weights, benchmark_returns)
 
     top = st.columns(5)
@@ -201,7 +216,7 @@ try:
 
     st.subheader('Metadata of Stocks')
 
-    metrics_view = metrics.loc[selected].copy()[[
+    metrics_view = metrics.loc[[ticker for ticker in selected if ticker in metrics.index]].copy()[[
         'Sector',
         'Industry',
         'MarketCapCAD',
