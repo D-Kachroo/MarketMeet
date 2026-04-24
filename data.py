@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import yfinance as yf
 
-from config import BENCHMARKS, FX_FALLBACK, LARGE_CAP_CAD, SMALL_CAP_CAD, SECTOR_FALLBACKS
+from config import BENCHMARKS, FX_FALLBACK, LARGE_CAP_CAD, SMALL_CAP_CAD
 
 
 def clean_tickers(raw: str | list[str]) -> list[str]:
@@ -93,6 +93,15 @@ async def _fetch_single_metadata(ticker: str, cadusd_rate: float) -> dict:
         except Exception:
             info = {}
 
+        sector = info.get('sector')
+        industry = info.get('industry')
+
+        if not sector or str(sector).strip() == '':
+            sector = info.get('quoteType') or 'Other'
+
+        if not industry or str(industry).strip() == '':
+            industry = sector
+
         market_cap_raw = info.get('marketCap', np.nan)
 
         if isinstance(market_cap_raw, (int, float)) and not pd.isna(market_cap_raw):
@@ -102,8 +111,8 @@ async def _fetch_single_metadata(ticker: str, cadusd_rate: float) -> dict:
 
         return {
             'Ticker': str(ticker),
-            'Sector': info.get('sector', np.nan),
-            'Industry': info.get('industry', np.nan),
+            'Sector': sector,
+            'Industry': industry,
             'MarketCapCAD': market_cap_cad,
             'SmallCap': bool(market_cap_cad < SMALL_CAP_CAD) if not pd.isna(market_cap_cad) else False,
             'LargeCap': bool(market_cap_cad > LARGE_CAP_CAD) if not pd.isna(market_cap_cad) else False,
@@ -112,8 +121,8 @@ async def _fetch_single_metadata(ticker: str, cadusd_rate: float) -> dict:
     except Exception:
         return {
             'Ticker': str(ticker),
-            'Sector': np.nan,
-            'Industry': np.nan,
+            'Sector': 'Other',
+            'Industry': 'Other',
             'MarketCapCAD': np.nan,
             'SmallCap': False,
             'LargeCap': False,
@@ -184,13 +193,7 @@ def build_metrics(
 
     joined = metrics.merge(metadata, on='Ticker', how='left')
 
-    joined['Sector'] = joined.apply(
-        lambda row: row['Sector']
-        if pd.notna(row['Sector']) and str(row['Sector']).strip() != ''
-        else SECTOR_FALLBACKS.get(str(row['Ticker']), 'Other'),
-        axis=1,
-    )
-
+    joined['Sector'] = joined['Sector'].fillna('Other')
     joined['Industry'] = joined['Industry'].fillna(joined['Sector'])
     joined['MarketCapCAD'] = joined['MarketCapCAD'].fillna(0)
     joined['SmallCap'] = joined['SmallCap'].fillna(False).astype(bool)
@@ -198,7 +201,5 @@ def build_metrics(
 
     joined = joined.dropna(subset=['AvgVolume', 'Correlation', 'Beta'], how='any')
     joined = joined.sort_values(['Correlation', 'AvgVolume'], ascending=[False, False])
-
-    return joined.set_index('Ticker')
 
     return joined.set_index('Ticker')
