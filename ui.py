@@ -107,8 +107,7 @@ def cumulative_chart(returns: pd.DataFrame, weights: pd.Series, benchmark_return
     fig.update_xaxes(
         title_text='Date',
         tickformat='%b %Y',
-        dtick='M1',
-        tickangle=-45,
+        tickangle=0,
     )
 
     fig.update_yaxes(
