@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import yfinance as yf
 
-from config import BENCHMARKS, FX_FALLBACK, LARGE_CAP_CAD, SMALL_CAP_CAD
+from config import BENCHMARKS, FX_FALLBACK, LARGE_CAP_CAD, SMALL_CAP_CAD, SECTOR_FALLBACKS
 
 
 def clean_tickers(raw: str | list[str]) -> list[str]:
