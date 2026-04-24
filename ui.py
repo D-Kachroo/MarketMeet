@@ -56,6 +56,7 @@ def weights_bar(portfolio: pd.DataFrame):
     fig.update_traces(texttemplate='%{text:.2f}%', textposition='outside')
     return _base_layout(fig, 'Weight of Each Stock (%)', 520)
 
+
 def sector_donut(portfolio: pd.DataFrame, metrics: pd.DataFrame):
     if portfolio.empty:
         fig = go.Figure()
@@ -64,11 +65,17 @@ def sector_donut(portfolio: pd.DataFrame, metrics: pd.DataFrame):
     portfolio_view = portfolio.copy()
     portfolio_view['Ticker'] = portfolio_view['Ticker'].astype(str)
 
-    metric_view = metrics.reset_index()[['Ticker', 'Sector']].copy()
-    metric_view['Ticker'] = metric_view['Ticker'].astype(str)
+    if metrics.empty or 'Sector' not in metrics.columns:
+        portfolio_view['Sector'] = 'Other'
+        sector = portfolio_view.groupby('Sector', as_index=False)['Weight%'].sum()
+    else:
+        metric_view = metrics.reset_index()[['Ticker', 'Sector']].copy()
+        metric_view['Ticker'] = metric_view['Ticker'].astype(str)
+        metric_view['Sector'] = metric_view['Sector'].fillna('Other').replace('', 'Other')
 
-    joined = portfolio_view.merge(metric_view, on='Ticker', how='left')
-    sector = joined.groupby('Sector', as_index=False)['Weight%'].sum().sort_values('Weight%', ascending=False)
+        joined = portfolio_view.merge(metric_view, on='Ticker', how='left')
+        joined['Sector'] = joined['Sector'].fillna('Other').replace('', 'Other')
+        sector = joined.groupby('Sector', as_index=False)['Weight%'].sum().sort_values('Weight%', ascending=False)
 
     fig = px.pie(sector, names='Sector', values='Weight%', hole=0.58, title='Sector Allocation')
     return _base_layout(fig, 'Sector Allocation', 420)
@@ -78,9 +85,10 @@ def cumulative_chart(returns: pd.DataFrame, weights: pd.Series, benchmark_return
     if weights.empty or returns.empty:
         growth = pd.DataFrame({'Benchmark': (1 + benchmark_returns).cumprod()})
     else:
+        aligned_returns = returns.reindex(columns=weights.index).fillna(0.0)
         portfolio_returns = pd.Series(
-            returns[weights.index].values @ weights.values,
-            index=returns.index,
+            aligned_returns.values @ weights.values,
+            index=aligned_returns.index,
             name='MarketMeet',
         )
         benchmark = benchmark_returns.reindex(portfolio_returns.index).fillna(0.0)
