@@ -284,16 +284,16 @@ def build_metrics(
     metadata['Ticker'] = metadata['Ticker'].astype(str)
     joined = metrics.merge(metadata, on='Ticker', how='left')
 
-joined['Sector'] = joined.apply(
-    lambda row: (
-        DEFAULT_SECTOR_FALLBACK.get(str(row['Ticker']).upper(), 'Unclassified')
-        if pd.isna(row['Sector']) or str(row['Sector']).strip() in ['', 'Other']
-        else str(row['Sector'])
-    ),
-    axis=1,
-)
+    joined['Sector'] = joined.apply(
+        lambda row: (
+            DEFAULT_SECTOR_FALLBACK.get(str(row['Ticker']).upper(), 'Unclassified')
+            if pd.isna(row['Sector']) or str(row['Sector']).strip() in ['', 'Other']
+            else str(row['Sector'])
+        ),
+        axis=1,
+    )
 
-joined['Industry'] = joined['Industry'].fillna('Unknown').replace('', 'Unknown')
+    joined['Industry'] = joined['Industry'].fillna('Unknown').replace('', 'Unknown')
 
     joined['Sector'] = joined['Sector'].fillna('Other').replace('', 'Other')
     joined['Industry'] = joined['Industry'].fillna('Unknown').replace('', 'Unknown')
