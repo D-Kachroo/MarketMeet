@@ -21,15 +21,12 @@ def select_candidates(metrics: pd.DataFrame) -> pd.DataFrame:
         (clean['Correlation'] >= MIN_CORRELATION)
     ].copy()
 
-    if not strict.empty:
-        return strict.sort_values(['Correlation', 'Beta', 'AvgVolume'], ascending=[False, True, False])
+    if len(strict) >= 1:
+        ranked = strict.sort_values(['Correlation', 'Beta', 'AvgVolume'], ascending=[False, True, False])
+    else:
+        ranked = clean.sort_values(['Correlation', 'Beta', 'AvgVolume'], ascending=[False, True, False])
 
-    relaxed = clean[clean['AvgVolume'] > 0].copy()
-
-    if not relaxed.empty:
-        return relaxed.sort_values(['Correlation', 'Beta', 'AvgVolume'], ascending=[False, True, False])
-
-    return clean.sort_values(['Correlation', 'Beta'], ascending=[False, True])
+    return ranked
 
 
 def choose_portfolio(metrics: pd.DataFrame, target_holdings: int) -> list[str]:
@@ -38,6 +35,7 @@ def choose_portfolio(metrics: pd.DataFrame, target_holdings: int) -> list[str]:
     if ranked.empty:
         return []
 
+    target_holdings = min(target_holdings, len(ranked))
     selected: list[str] = []
     sector_counts: dict[str, int] = {}
     sector_limit = max(2, target_holdings // 4)
@@ -71,8 +69,7 @@ def optimize_weights(
 
     returns = returns.copy()
     returns.columns = returns.columns.astype(str)
-    returns = returns.replace([np.inf, -np.inf], np.nan).dropna(axis=1, how='all')
-    returns = returns.fillna(0.0)
+    returns = returns.replace([np.inf, -np.inf], np.nan).dropna(axis=1, how='all').fillna(0.0)
 
     columns = [str(col) for col in returns.columns]
     n = len(columns)
@@ -133,19 +130,12 @@ def build_portfolio_table(prices: pd.Series, weights: pd.Series, cadusd_rate: fl
     prices_local = prices.copy()
     prices_local.index = prices_local.index.astype(str)
     prices_local = pd.to_numeric(prices_local.reindex(weights.index), errors='coerce')
-    prices_local = prices_local.ffill().bfill()
-
-    valid_mask = prices_local.notna() & (prices_local > 0)
-    weights = weights.loc[valid_mask]
-    prices_local = prices_local.loc[valid_mask]
-
-    if weights.empty:
-        return pd.DataFrame(columns=['Ticker', 'PriceCAD', 'Shares', 'ValueCAD', 'Weight%'])
-
-    weights = weights / weights.sum()
 
     prices_cad = pd.Series(
-        [price if ticker.endswith('.TO') else price / cadusd_rate for ticker, price in prices_local.items()],
+        [
+            price if ticker.endswith('.TO') else price / cadusd_rate
+            for ticker, price in prices_local.items()
+        ],
         index=weights.index,
         dtype=float,
     )
