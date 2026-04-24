@@ -40,8 +40,7 @@ def average_volume(series: pd.Series) -> float:
     if values.empty:
         return np.nan
 
-    recent = values.tail(60)
-    return float(recent.mean()) if not recent.empty else float(values.mean())
+    return float(values.tail(60).mean())
 
 
 def get_cadusd_rate() -> float:
@@ -84,6 +83,7 @@ def _extract_field(raw: pd.DataFrame, field: str) -> pd.DataFrame:
 
 
 def download_market_data(tickers: list[str], start: str, end: str | None = None):
+    tickers = clean_tickers(tickers)
     symbols = clean_tickers(tickers + BENCHMARKS)
 
     raw = yf.download(
@@ -103,39 +103,34 @@ def download_market_data(tickers: list[str], start: str, end: str | None = None)
     if close.empty:
         return pd.DataFrame(), pd.DataFrame(), pd.Series(dtype=float), pd.Series(dtype=float), tickers
 
-    tickers_upper = [ticker.upper() for ticker in tickers]
-    benchmarks_upper = [ticker.upper() for ticker in BENCHMARKS]
-
     valid = [
-        ticker for ticker in tickers_upper
+        ticker for ticker in tickers
         if ticker in close.columns and close[ticker].dropna().shape[0] >= 20
     ]
 
-    invalid = sorted(set(tickers_upper) - set(valid))
+    invalid = sorted(set(tickers) - set(valid))
 
-    benchmark_prices = close.reindex(columns=[b for b in benchmarks_upper if b in close.columns])
+    prices = close.reindex(columns=valid)
+    prices = prices.ffill(limit=5).dropna(how='all')
+    prices = prices.loc[:, prices.notna().sum() >= 20]
+
+    invalid = sorted(set(invalid).union(set(valid) - set(prices.columns)))
+
+    benchmarks = [benchmark for benchmark in BENCHMARKS if benchmark in close.columns]
+    benchmark_prices = close.reindex(columns=benchmarks)
     benchmark_returns_frame = benchmark_prices.pct_change(fill_method=None).replace([np.inf, -np.inf], np.nan)
 
     if benchmark_returns_frame.empty or benchmark_returns_frame.dropna(how='all').empty:
-        benchmark_returns = pd.Series(dtype=float)
-        benchmark = pd.Series(dtype=float)
+        benchmark_returns = pd.Series(0.0, index=prices.index, name='Benchmark')
+        benchmark = pd.Series(1.0, index=prices.index, name='Benchmark')
     else:
         benchmark_returns = benchmark_returns_frame.mean(axis=1, skipna=True).dropna()
-        benchmark = (1 + benchmark_returns).cumprod()
-        benchmark.name = 'Benchmark'
-
-    prices = close.reindex(columns=valid)
-    prices = prices.dropna(how='all', axis=1)
-    prices = prices.ffill(limit=5).dropna(how='all')
-
-    if not benchmark_returns.empty:
         common_index = prices.index.intersection(benchmark_returns.index)
+
         prices = prices.loc[common_index]
         benchmark_returns = benchmark_returns.loc[common_index]
-        benchmark = benchmark.loc[common_index]
-
-    prices = prices.loc[:, prices.notna().sum() >= 20]
-    invalid = sorted(set(invalid).union(set(valid) - set(prices.columns)))
+        benchmark = (1 + benchmark_returns).cumprod()
+        benchmark.name = 'Benchmark'
 
     volume = volume.reindex(columns=prices.columns)
     volume = volume.reindex(prices.index)
@@ -147,15 +142,6 @@ def download_market_data(tickers: list[str], start: str, end: str | None = None)
 
 
 async def _fetch_single_metadata(ticker: str, cadusd_rate: float) -> dict:
-    fallback = {
-        'Ticker': str(ticker),
-        'Sector': 'Other',
-        'Industry': 'Unknown',
-        'MarketCapCAD': np.nan,
-        'SmallCap': False,
-        'LargeCap': False,
-    }
-
     try:
         obj = yf.Ticker(ticker)
 
@@ -177,60 +163,36 @@ async def _fetch_single_metadata(ticker: str, cadusd_rate: float) -> dict:
         else:
             market_cap_cad = np.nan
 
-        sector = info.get('sector') or 'Other'
-        industry = info.get('industry') or 'Unknown'
-
         return {
             'Ticker': str(ticker),
-            'Sector': str(sector),
-            'Industry': str(industry),
+            'Sector': str(info.get('sector') or 'Other'),
+            'Industry': str(info.get('industry') or 'Unknown'),
             'MarketCapCAD': market_cap_cad,
             'SmallCap': bool(market_cap_cad < SMALL_CAP_CAD) if not pd.isna(market_cap_cad) else False,
             'LargeCap': bool(market_cap_cad > LARGE_CAP_CAD) if not pd.isna(market_cap_cad) else False,
         }
 
     except Exception:
-        return fallback
-
-
-async def fetch_metadata(tickers: list[str], cadusd_rate: float) -> pd.DataFrame:
-    tickers = [str(ticker).upper() for ticker in tickers]
-    final_rows: dict[str, dict] = {}
-
-    for _ in range(3):
-        missing = [
-            ticker for ticker in tickers
-            if ticker not in final_rows
-            or final_rows[ticker].get('Sector') in [None, '', 'Other']
-            or final_rows[ticker].get('Industry') in [None, '', 'Unknown']
-        ]
-
-        if not missing:
-            break
-
-        rows = await asyncio.gather(*[_fetch_single_metadata(ticker, cadusd_rate) for ticker in missing])
-
-        for row in rows:
-            ticker = str(row['Ticker']).upper()
-
-            if ticker not in final_rows:
-                final_rows[ticker] = row
-            elif row.get('Sector') != 'Other' or row.get('Industry') != 'Unknown':
-                final_rows[ticker] = row
-
-        await asyncio.sleep(0.5)
-
-    for ticker in tickers:
-        final_rows.setdefault(ticker, {
-            'Ticker': ticker,
+        return {
+            'Ticker': str(ticker),
             'Sector': 'Other',
             'Industry': 'Unknown',
             'MarketCapCAD': np.nan,
             'SmallCap': False,
             'LargeCap': False,
-        })
+        }
 
-    frame = pd.DataFrame(final_rows.values())
+
+async def fetch_metadata(tickers: list[str], cadusd_rate: float) -> pd.DataFrame:
+    tickers = [str(ticker).upper() for ticker in tickers]
+    rows = await asyncio.gather(*[_fetch_single_metadata(ticker, cadusd_rate) for ticker in tickers])
+
+    frame = pd.DataFrame(rows)
+
+    for ticker in tickers:
+        if ticker not in set(frame['Ticker']):
+            frame.loc[len(frame)] = [ticker, 'Other', 'Unknown', np.nan, False, False]
+
     frame['Ticker'] = frame['Ticker'].astype(str)
 
     return frame.set_index('Ticker')
@@ -256,40 +218,39 @@ def build_metrics(
     rows: list[dict] = []
 
     for ticker in prices.columns:
-        if ticker not in returns.columns:
-            continue
-
         r = pd.to_numeric(returns[str(ticker)], errors='coerce').dropna()
 
-        if benchmark_returns.empty:
-            b = pd.Series(dtype=float)
-        else:
-            b = pd.to_numeric(benchmark_returns.reindex(r.index), errors='coerce').dropna()
+        if r.empty:
+            continue
 
+        b = pd.to_numeric(benchmark_returns.reindex(r.index), errors='coerce').dropna()
         idx = r.index.intersection(b.index)
-        r = pd.Series(r.loc[idx], dtype=float) if len(idx) else r
-        b = pd.Series(b.loc[idx], dtype=float) if len(idx) else b
 
-        if len(r) < 2:
-            std = cov = beta = corr = weekly = idio = np.nan
-        elif len(b) < 2:
-            std = float(r.std())
-            cov = np.nan
-            beta = np.nan
-            corr = 0.0
-            weekly = weekly_volatility(r)
-            idio = std
+        if len(idx) >= 2:
+            r_aligned = pd.Series(r.loc[idx], dtype=float)
+            b_aligned = pd.Series(b.loc[idx], dtype=float)
         else:
-            std = float(r.std())
-            cov = float(r.cov(b))
-            variance_b = float(b.var())
-            beta = cov / variance_b if variance_b > 0 else np.nan
-            corr = float(r.corr(b)) if r.std() > 0 and b.std() > 0 else 0.0
-            weekly = weekly_volatility(r)
+            r_aligned = r
+            b_aligned = pd.Series(dtype=float)
 
-            alpha = r.mean() - beta * b.mean() if not np.isnan(beta) else np.nan
-            residuals = r - (alpha + beta * b) if not np.isnan(alpha) else pd.Series(dtype=float)
-            idio = float(residuals.std()) if not residuals.empty else np.nan
+        std = float(r_aligned.std()) if len(r_aligned) >= 2 else np.nan
+
+        if len(r_aligned) >= 2 and len(b_aligned) >= 2:
+            cov = float(r_aligned.cov(b_aligned))
+            variance_b = float(b_aligned.var())
+            beta = cov / variance_b if variance_b > 0 else np.nan
+            corr = float(r_aligned.corr(b_aligned)) if r_aligned.std() > 0 and b_aligned.std() > 0 else 0.0
+            weekly = weekly_volatility(r_aligned)
+
+            alpha = r_aligned.mean() - beta * b_aligned.mean() if not np.isnan(beta) else np.nan
+            residuals = r_aligned - (alpha + beta * b_aligned) if not np.isnan(alpha) else pd.Series(dtype=float)
+            idio = float(residuals.std()) if not residuals.empty else std
+        else:
+            cov = np.nan
+            beta = 1.0
+            corr = 0.0
+            weekly = weekly_volatility(r_aligned)
+            idio = std
 
         rows.append({
             'Ticker': str(ticker),
@@ -307,29 +268,21 @@ def build_metrics(
     if metrics.empty:
         return pd.DataFrame()
 
-    metrics['Ticker'] = metrics['Ticker'].astype(str)
-
+    metadata = metadata.reset_index().copy() if not metadata.empty else pd.DataFrame()
     if metadata.empty:
-        metadata = pd.DataFrame(index=metrics['Ticker'])
-        metadata['Sector'] = 'Other'
-        metadata['Industry'] = 'Unknown'
-        metadata['MarketCapCAD'] = np.nan
-        metadata['SmallCap'] = False
-        metadata['LargeCap'] = False
+        metadata = pd.DataFrame({'Ticker': metrics['Ticker']})
 
-    metadata = metadata.reset_index().copy()
     metadata['Ticker'] = metadata['Ticker'].astype(str)
-
     joined = metrics.merge(metadata, on='Ticker', how='left')
+
+    joined['Sector'] = joined.get('Sector', 'Other')
+    joined['Industry'] = joined.get('Industry', 'Unknown')
 
     joined['Sector'] = joined['Sector'].fillna('Other').replace('', 'Other')
     joined['Industry'] = joined['Industry'].fillna('Unknown').replace('', 'Unknown')
     joined['AvgVolume'] = joined['AvgVolume'].fillna(0.0)
     joined['Correlation'] = joined['Correlation'].fillna(0.0)
     joined['Beta'] = joined['Beta'].fillna(1.0)
-    joined['DailyVolatility'] = joined['DailyVolatility'].fillna(joined['DailyVolatility'].median())
-    joined['WeeklyVolatility'] = joined['WeeklyVolatility'].fillna(joined['WeeklyVolatility'].median())
-    joined['IdiosyncraticVolatility'] = joined['IdiosyncraticVolatility'].fillna(joined['DailyVolatility'])
 
     joined = joined.sort_values(['Correlation', 'AvgVolume'], ascending=[False, False])
 
