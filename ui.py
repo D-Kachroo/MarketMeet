@@ -111,7 +111,7 @@ def cumulative_chart(returns: pd.DataFrame, weights: pd.Series, benchmark_return
     )
 
     fig.update_yaxes(
-        title_text='Investment Value (Starting at $1)',
+        title_text='Total Return (Starting at $1)',
     )
 
     return fig
