@@ -102,7 +102,7 @@ try:
         st.error('The ticker list must contain at least as many symbols as the target number of stocks.')
         st.stop()
 
-    with st.spinner('Downloading market data and building the portfolio...'):
+    with st.spinner('Downloading yfinance market data and generating the portfolio...'):
         prices, volume, benchmark, benchmark_returns, invalid = download_market_data(tickers, str(start_date))
 
         cadusd_rate = get_cadusd_rate()
@@ -166,7 +166,7 @@ try:
 
         csv = portfolio.to_csv(index=False).encode('utf-8')
         st.download_button(
-            'Download CSV file',
+            'Download CSV File',
             data=csv,
             file_name='marketmeet_portfolio.csv',
             mime='text/csv',
