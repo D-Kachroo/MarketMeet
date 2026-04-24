@@ -142,6 +142,9 @@ def download_market_data(tickers: list[str], start: str, end: str | None = None)
 
 
 async def _fetch_single_metadata(ticker: str, cadusd_rate: float) -> dict:
+    ticker = str(ticker).upper()
+    fallback_sector = DEFAULT_SECTOR_FALLBACK.get(ticker, 'Unclassified')
+
     try:
         obj = yf.Ticker(ticker)
 
@@ -163,10 +166,16 @@ async def _fetch_single_metadata(ticker: str, cadusd_rate: float) -> dict:
         else:
             market_cap_cad = np.nan
 
+        sector = info.get('sector') or fallback_sector
+        industry = info.get('industry') or 'Unknown'
+
+        if sector == 'Other':
+            sector = fallback_sector
+
         return {
-            'Ticker': str(ticker),
-            'Sector': str(info.get('sector') or 'Other'),
-            'Industry': str(info.get('industry') or 'Unknown'),
+            'Ticker': ticker,
+            'Sector': str(sector),
+            'Industry': str(industry),
             'MarketCapCAD': market_cap_cad,
             'SmallCap': bool(market_cap_cad < SMALL_CAP_CAD) if not pd.isna(market_cap_cad) else False,
             'LargeCap': bool(market_cap_cad > LARGE_CAP_CAD) if not pd.isna(market_cap_cad) else False,
@@ -174,8 +183,8 @@ async def _fetch_single_metadata(ticker: str, cadusd_rate: float) -> dict:
 
     except Exception:
         return {
-            'Ticker': str(ticker),
-            'Sector': 'Other',
+            'Ticker': ticker,
+            'Sector': fallback_sector,
             'Industry': 'Unknown',
             'MarketCapCAD': np.nan,
             'SmallCap': False,
@@ -275,8 +284,16 @@ def build_metrics(
     metadata['Ticker'] = metadata['Ticker'].astype(str)
     joined = metrics.merge(metadata, on='Ticker', how='left')
 
-    joined['Sector'] = joined.get('Sector', 'Other')
-    joined['Industry'] = joined.get('Industry', 'Unknown')
+joined['Sector'] = joined.apply(
+    lambda row: (
+        DEFAULT_SECTOR_FALLBACK.get(str(row['Ticker']).upper(), 'Unclassified')
+        if pd.isna(row['Sector']) or str(row['Sector']).strip() in ['', 'Other']
+        else str(row['Sector'])
+    ),
+    axis=1,
+)
+
+joined['Industry'] = joined['Industry'].fillna('Unknown').replace('', 'Unknown')
 
     joined['Sector'] = joined['Sector'].fillna('Other').replace('', 'Other')
     joined['Industry'] = joined['Industry'].fillna('Unknown').replace('', 'Unknown')
