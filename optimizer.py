@@ -8,12 +8,29 @@ from config import MAX_WEIGHT, MIN_AVG_VOLUME, MIN_CORRELATION, MIN_WEIGHT, PORT
 
 
 def select_candidates(metrics: pd.DataFrame) -> pd.DataFrame:
-    filtered = metrics[
-        (metrics['AvgVolume'] >= MIN_AVG_VOLUME) &
-        (metrics['Correlation'] >= MIN_CORRELATION)
+    if metrics.empty:
+        return metrics
+
+    clean = metrics.copy()
+    clean['AvgVolume'] = pd.to_numeric(clean['AvgVolume'], errors='coerce').fillna(0.0)
+    clean['Correlation'] = pd.to_numeric(clean['Correlation'], errors='coerce').fillna(0.0)
+    clean['Beta'] = pd.to_numeric(clean['Beta'], errors='coerce').fillna(1.0)
+
+    strict = clean[
+        (clean['AvgVolume'] >= MIN_AVG_VOLUME) &
+        (clean['Correlation'] >= MIN_CORRELATION)
     ].copy()
 
-    return filtered.sort_values(['Correlation', 'Beta'], ascending=[False, True])
+    if not strict.empty:
+        return strict.sort_values(['Correlation', 'Beta', 'AvgVolume'], ascending=[False, True, False])
+
+    relaxed = clean[clean['AvgVolume'] > 0].copy()
+
+    if not relaxed.empty:
+        return relaxed.sort_values(['Correlation', 'Beta', 'AvgVolume'], ascending=[False, True, False])
+
+    return clean.sort_values(['Correlation', 'Beta'], ascending=[False, True])
+
 
 def choose_portfolio(metrics: pd.DataFrame, target_holdings: int) -> list[str]:
     ranked = select_candidates(metrics)
@@ -26,7 +43,7 @@ def choose_portfolio(metrics: pd.DataFrame, target_holdings: int) -> list[str]:
     sector_limit = max(2, target_holdings // 4)
 
     for ticker, row in ranked.iterrows():
-        sector = str(row['Sector'])
+        sector = str(row.get('Sector', 'Other'))
 
         if sector_counts.get(sector, 0) >= sector_limit:
             continue
@@ -43,19 +60,29 @@ def choose_portfolio(metrics: pd.DataFrame, target_holdings: int) -> list[str]:
 
     return selected[:target_holdings]
 
+
 def optimize_weights(
     returns: pd.DataFrame,
     benchmark_returns: pd.Series,
     risk_weight: float,
 ) -> pd.Series:
+    if returns.empty:
+        return pd.Series(dtype=float)
+
+    returns = returns.copy()
+    returns.columns = returns.columns.astype(str)
+    returns = returns.replace([np.inf, -np.inf], np.nan).dropna(axis=1, how='all')
+    returns = returns.fillna(0.0)
+
     columns = [str(col) for col in returns.columns]
     n = len(columns)
 
     if n == 0:
         return pd.Series(dtype=float)
 
-    lower_bound = min(MIN_WEIGHT, 1 / n)
-    upper_bound = max(MAX_WEIGHT, 1 / n)
+    lower_bound = MIN_WEIGHT if MIN_WEIGHT * n <= 1 else 0.0
+    upper_bound = MAX_WEIGHT if MAX_WEIGHT * n >= 1 else 1.0
+
     initial = np.ones(n) / n
     benchmark = benchmark_returns.reindex(returns.index).fillna(0.0)
 
@@ -66,7 +93,8 @@ def optimize_weights(
 
         correlation_term = 1.0
         if np.std(portfolio) > 0 and np.std(benchmark.values) > 0:
-            correlation_term = 1 - np.corrcoef(portfolio, benchmark.values)[0, 1]
+            corr = np.corrcoef(portfolio, benchmark.values)[0, 1]
+            correlation_term = 1 - corr if not np.isnan(corr) else 1.0
 
         return tracking_error + risk_weight * volatility + 0.1 * correlation_term
 
@@ -79,24 +107,42 @@ def optimize_weights(
         method='SLSQP',
         bounds=bounds,
         constraints=constraints,
+        options={'maxiter': 1000},
     )
 
     values = initial if not result.success else result.x
     weights = pd.Series(values, index=columns, dtype=float)
+    weights = weights.clip(lower=0.0)
+
+    if weights.sum() <= 0:
+        weights = pd.Series(initial, index=columns, dtype=float)
 
     return weights / weights.sum()
 
 
 def build_portfolio_table(prices: pd.Series, weights: pd.Series, cadusd_rate: float) -> pd.DataFrame:
     if weights.empty:
-        return pd.DataFrame(columns=['Ticker', 'PriceCAD', 'Shares', 'ValueCAD', 'WeightPct'])
+        return pd.DataFrame(columns=['Ticker', 'PriceCAD', 'Shares', 'ValueCAD', 'Weight%'])
+
+    if cadusd_rate <= 0 or pd.isna(cadusd_rate):
+        cadusd_rate = 0.73
 
     weights = weights.copy()
     weights.index = weights.index.astype(str)
 
     prices_local = prices.copy()
     prices_local.index = prices_local.index.astype(str)
-    prices_local = prices_local.reindex(weights.index)
+    prices_local = pd.to_numeric(prices_local.reindex(weights.index), errors='coerce')
+    prices_local = prices_local.ffill().bfill()
+
+    valid_mask = prices_local.notna() & (prices_local > 0)
+    weights = weights.loc[valid_mask]
+    prices_local = prices_local.loc[valid_mask]
+
+    if weights.empty:
+        return pd.DataFrame(columns=['Ticker', 'PriceCAD', 'Shares', 'ValueCAD', 'Weight%'])
+
+    weights = weights / weights.sum()
 
     prices_cad = pd.Series(
         [price if ticker.endswith('.TO') else price / cadusd_rate for ticker, price in prices_local.items()],
@@ -139,7 +185,11 @@ def portfolio_stats(returns: pd.DataFrame, weights: pd.Series, benchmark_returns
             'TrackingErrorPct': 0.0,
         }
 
-    portfolio = returns[weights.index].values @ weights.values
+    returns = returns.copy()
+    returns.columns = returns.columns.astype(str)
+    returns = returns.reindex(columns=weights.index).fillna(0.0)
+
+    portfolio = returns.values @ weights.values
     portfolio = pd.Series(portfolio, index=returns.index)
 
     benchmark = benchmark_returns.reindex(portfolio.index).fillna(0.0)
