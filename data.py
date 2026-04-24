@@ -209,13 +209,7 @@ def build_metrics(
     metadata['Ticker'] = metadata['Ticker'].astype(str)
 
     joined = metrics.merge(metadata, on='Ticker', how='left')
-
-    joined = joined.dropna(subset=['AvgVolume', 'Correlation', 'Beta'], how='any')
-    joined_with_sectors = joined.dropna(subset=['Sector', 'Industry'], how='any')
-
-    if not joined_with_sectors.empty:
-        joined = joined_with_sectors
-
+    joined = joined.dropna(subset=['Sector', 'Industry'], how='any')
     joined = joined.sort_values(['Correlation', 'AvgVolume'], ascending=[False, False])
 
     return joined.set_index('Ticker')
