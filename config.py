@@ -2,7 +2,7 @@ DEFAULT_TICKERS = [
     'AAPL', 'MSFT', 'NVDA', 'AMZN', 'GOOGL', 'META', 'JPM', 'V', 'XOM', 'COST',
     'UNH', 'HD', 'PG', 'KO', 'PEP', 'CAT', 'NEE', 'LIN', 'AMT', 'RY.TO',
     'TD.TO', 'BNS.TO', 'ENB.TO', 'CNQ.TO', 'CNR.TO', 'CP.TO', 'SHOP.TO',
-    'BAM.TO', 'MFC.TO', 'FTS.TO'
+    'BAM.TO', 'MFC.TO', 'FTS.TO', 'MCD'
 ]
 
 DEFAULT_SECTOR_FALLBACK = {
