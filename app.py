@@ -123,7 +123,7 @@ try:
 
     top = st.columns(5)
     cards = [
-        ('# of Stocks', str(len(portfolio))),
+        ('Number of Stocks', str(len(portfolio))),
         ('Expected Return (Daily)', f"{stats['ExpectedDailyReturnPct']:.2f}%"),
         ('Volatility (Daily)', f"{stats['DailyVolatilityPct']:.2f}%"),
         ('Beta (50% TSX / 50% S&P 500)', f"{stats['Beta']:.2f}"),
