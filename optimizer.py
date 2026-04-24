@@ -15,7 +15,6 @@ def select_candidates(metrics: pd.DataFrame) -> pd.DataFrame:
 
     return filtered.sort_values(['Correlation', 'Beta'], ascending=[False, True])
 
-
 def choose_portfolio(metrics: pd.DataFrame, target_holdings: int) -> list[str]:
     ranked = select_candidates(metrics)
 
@@ -27,46 +26,22 @@ def choose_portfolio(metrics: pd.DataFrame, target_holdings: int) -> list[str]:
     sector_limit = max(2, target_holdings // 4)
 
     for ticker, row in ranked.iterrows():
-        ticker = str(ticker)
         sector = str(row['Sector'])
 
         if sector_counts.get(sector, 0) >= sector_limit:
             continue
 
-        selected.append(ticker)
+        selected.append(str(ticker))
         sector_counts[sector] = sector_counts.get(sector, 0) + 1
 
-        if len(selected) == target_holdings:
-            return selected
+        if len(selected) >= target_holdings:
+            break
 
-    for ticker in ranked.index:
-        ticker = str(ticker)
+    if len(selected) < target_holdings:
+        leftovers = [str(ticker) for ticker in ranked.index if str(ticker) not in selected]
+        selected.extend(leftovers[: target_holdings - len(selected)])
 
-        if ticker not in selected:
-            selected.append(ticker)
-
-        if len(selected) == target_holdings:
-            return selected
-
-    remaining = metrics.copy()
-    remaining = remaining.drop(index=selected, errors='ignore')
-    remaining = remaining.dropna(subset=['AvgVolume', 'Correlation'])
-    remaining = remaining.sort_values(
-        ['AvgVolume', 'Correlation'],
-        ascending=[False, False],
-    )
-
-    for ticker in remaining.index:
-        ticker = str(ticker)
-
-        if ticker not in selected:
-            selected.append(ticker)
-
-        if len(selected) == target_holdings:
-            return selected
-
-    return selected
-
+    return selected[:target_holdings]
 
 def optimize_weights(
     returns: pd.DataFrame,
