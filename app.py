@@ -67,7 +67,7 @@ with st.sidebar:
     )
 
     start_date = st.date_input(
-        'Start Date:',
+        'Start Date (YYYY/MM/DD):',
         value=pd.to_datetime(DEFAULT_START).date(),
         min_value=date(2018, 1, 1),
         max_value=date.today(),
