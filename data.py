@@ -184,13 +184,21 @@ def build_metrics(
 
     joined = metrics.merge(metadata, on='Ticker', how='left')
 
-    joined['Sector'] = joined['Sector'].fillna('Unknown')
-    joined['Industry'] = joined['Industry'].fillna('Unknown')
+    joined['Sector'] = joined.apply(
+        lambda row: row['Sector']
+        if pd.notna(row['Sector']) and str(row['Sector']).strip() != ''
+        else SECTOR_FALLBACKS.get(str(row['Ticker']), 'Other'),
+        axis=1,
+    )
+
+    joined['Industry'] = joined['Industry'].fillna(joined['Sector'])
     joined['MarketCapCAD'] = joined['MarketCapCAD'].fillna(0)
     joined['SmallCap'] = joined['SmallCap'].fillna(False).astype(bool)
     joined['LargeCap'] = joined['LargeCap'].fillna(False).astype(bool)
 
     joined = joined.dropna(subset=['AvgVolume', 'Correlation', 'Beta'], how='any')
     joined = joined.sort_values(['Correlation', 'AvgVolume'], ascending=[False, False])
+
+    return joined.set_index('Ticker')
 
     return joined.set_index('Ticker')
