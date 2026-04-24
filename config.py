@@ -15,3 +15,34 @@ SMALL_CAP_CAD = 2_000_000_000
 LARGE_CAP_CAD = 10_000_000_000
 DEFAULT_START = '2024-01-01'
 FX_FALLBACK = 0.73
+
+SECTOR_FALLBACKS = {
+    'AAPL': 'Technology',
+    'ABBV': 'Healthcare',
+    'AMZN': 'Consumer Cyclical',
+    'AXP': 'Financial Services',
+    'BK': 'Financial Services',
+    'CMCSA': 'Communication Services',
+    'COST': 'Consumer Defensive',
+    'CSCO': 'Technology',
+    'DUOL': 'Technology',
+    'GOOG': 'Communication Services',
+    'GM': 'Consumer Cyclical',
+    'LOW': 'Consumer Cyclical',
+    'ORCL': 'Technology',
+    'PEP': 'Consumer Defensive',
+    'SHOP': 'Technology',
+    'SHOP.TO': 'Technology',
+    'SLB': 'Energy',
+    'SPG': 'Real Estate',
+    'TD': 'Financial Services',
+    'TD.TO': 'Financial Services',
+    'SU.TO': 'Energy',
+    'RY.TO': 'Financial Services',
+    'FTG.TO': 'Industrials',
+    'AIM.TO': 'Basic Materials',
+    'SAP.TO': 'Consumer Defensive',
+    'AW.TO': 'Consumer Cyclical',
+    'EXE.TO': 'Healthcare',
+    'AUST': 'Basic Materials',
+}
