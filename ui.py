@@ -31,7 +31,7 @@ def _base_layout(fig, title: str, height: int):
 def weights_bar(portfolio: pd.DataFrame):
     fig = px.bar(
         portfolio.sort_values('Weight%', ascending=True),
-        x='Weight (%)',
+        x='Weight%',
         y='Ticker',
         orientation='h',
         title='Portfolio Weights',
