@@ -86,7 +86,7 @@ with st.sidebar:
         max_value=2.0,
         value=0.8,
         step=0.1,
-        help='Higher values place more emphasis on lower volatility when selecting weights.',
+        help='Higher values prioritize lower volatility when selecting stock weights.',
     )
 
     run = st.button('Generate portfolio', use_container_width=True)
