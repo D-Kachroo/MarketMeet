@@ -93,15 +93,6 @@ async def _fetch_single_metadata(ticker: str, cadusd_rate: float) -> dict:
         except Exception:
             info = {}
 
-        sector = info.get('sector')
-        industry = info.get('industry')
-
-        if not sector or str(sector).strip() == '':
-            sector = info.get('quoteType') or 'Other'
-
-        if not industry or str(industry).strip() == '':
-            industry = sector
-
         market_cap_raw = info.get('marketCap', np.nan)
 
         if isinstance(market_cap_raw, (int, float)) and not pd.isna(market_cap_raw):
@@ -111,8 +102,8 @@ async def _fetch_single_metadata(ticker: str, cadusd_rate: float) -> dict:
 
         return {
             'Ticker': str(ticker),
-            'Sector': sector,
-            'Industry': industry,
+            'Sector': info.get('sector', np.nan),
+            'Industry': info.get('industry', np.nan),
             'MarketCapCAD': market_cap_cad,
             'SmallCap': bool(market_cap_cad < SMALL_CAP_CAD) if not pd.isna(market_cap_cad) else False,
             'LargeCap': bool(market_cap_cad > LARGE_CAP_CAD) if not pd.isna(market_cap_cad) else False,
@@ -121,8 +112,8 @@ async def _fetch_single_metadata(ticker: str, cadusd_rate: float) -> dict:
     except Exception:
         return {
             'Ticker': str(ticker),
-            'Sector': 'Other',
-            'Industry': 'Other',
+            'Sector': np.nan,
+            'Industry': np.nan,
             'MarketCapCAD': np.nan,
             'SmallCap': False,
             'LargeCap': False,
@@ -192,14 +183,7 @@ def build_metrics(
     metadata['Ticker'] = metadata['Ticker'].astype(str)
 
     joined = metrics.merge(metadata, on='Ticker', how='left')
-
-    joined['Sector'] = joined['Sector'].fillna('Other')
-    joined['Industry'] = joined['Industry'].fillna(joined['Sector'])
-    joined['MarketCapCAD'] = joined['MarketCapCAD'].fillna(0)
-    joined['SmallCap'] = joined['SmallCap'].fillna(False).astype(bool)
-    joined['LargeCap'] = joined['LargeCap'].fillna(False).astype(bool)
-
-    joined = joined.dropna(subset=['AvgVolume', 'Correlation', 'Beta'], how='any')
+    joined = joined.dropna(subset=['Sector', 'Industry'], how='any')
     joined = joined.sort_values(['Correlation', 'AvgVolume'], ascending=[False, False])
 
     return joined.set_index('Ticker')
