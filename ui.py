@@ -78,7 +78,7 @@ def sector_donut(portfolio: pd.DataFrame, metrics: pd.DataFrame):
 
 def cumulative_chart(returns: pd.DataFrame, weights: pd.Series, benchmark_returns: pd.Series):
     if weights.empty or returns.empty:
-        growth = pd.DataFrame({'S&P 500 + TSX 60': (1 + benchmark_returns).cumprod()})
+        growth = pd.DataFrame({'Benchmark': (1 + benchmark_returns).cumprod()})
     else:
         portfolio_returns = pd.Series(
             returns[weights.index].values @ weights.values,
@@ -88,7 +88,7 @@ def cumulative_chart(returns: pd.DataFrame, weights: pd.Series, benchmark_return
         benchmark = benchmark_returns.reindex(portfolio_returns.index).fillna(0.0)
         growth = pd.DataFrame({
             'MarketMeet': (1 + portfolio_returns).cumprod(),
-            'Benchmark': (1 + benchmark).cumprod(),
+            'S&P 500 + TSX 60': (1 + benchmark).cumprod(),
         })
 
     fig = go.Figure()
