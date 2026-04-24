@@ -16,30 +16,29 @@ def metric_card(label: str, value: str) -> str:
 
 def _base_layout(fig, title: str, height: int):
     fig.update_layout(
-        title=dict(
-            text=title,
-            font=dict(color='white')
-        ),
+        title=dict(text=title, font=dict(color='white')),
         height=height,
         margin=dict(l=10, r=10, t=60, b=10),
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(255,255,255,0.02)',
         font=dict(color='white'),
-        legend=dict(
-            font=dict(color='white')
-        )
+        legend=dict(font=dict(color='white')),
     )
 
     fig.update_xaxes(
         gridcolor='rgba(255,255,255,0.08)',
         zerolinecolor='rgba(255,255,255,0.08)',
-        color='white'
+        color='white',
+        title_font=dict(color='white'),
+        tickfont=dict(color='white'),
     )
 
     fig.update_yaxes(
         gridcolor='rgba(255,255,255,0.08)',
         zerolinecolor='rgba(255,255,255,0.08)',
-        color='white'
+        color='white',
+        title_font=dict(color='white'),
+        tickfont=dict(color='white'),
     )
 
     return fig
@@ -72,7 +71,7 @@ def sector_donut(portfolio: pd.DataFrame, metrics: pd.DataFrame):
     joined = portfolio_view.merge(metric_view, on='Ticker', how='left')
     sector = joined.groupby('Sector', as_index=False)['Weight%'].sum().sort_values('Weight%', ascending=False)
 
-    fig = px.pie(sector, names='Sector', values='Weight%', hole=0.58, title='Sector Allocation')
+    fig = px.pie(sector, names='Sector', values='Weight%', hole=0.58)
     return _base_layout(fig, 'Sector Allocation', 420)
 
 
@@ -92,7 +91,28 @@ def cumulative_chart(returns: pd.DataFrame, weights: pd.Series, benchmark_return
         })
 
     fig = go.Figure()
-    for column in growth.columns:
-        fig.add_trace(go.Scatter(x=growth.index, y=growth[column], mode='lines', name=column))
 
-    return _base_layout(fig, 'Cumulative Performance', 420)
+    for column in growth.columns:
+        fig.add_trace(
+            go.Scatter(
+                x=growth.index,
+                y=growth[column],
+                mode='lines',
+                name=column,
+            )
+        )
+
+    fig = _base_layout(fig, 'Cumulative Return (Portfolio vs Benchmark)', 420)
+
+    fig.update_xaxes(
+        title_text='Date',
+        tickformat='%b %Y',
+        dtick='M1',
+        tickangle=-45,
+    )
+
+    fig.update_yaxes(
+        title_text='Growth of $1',
+    )
+
+    return fig
