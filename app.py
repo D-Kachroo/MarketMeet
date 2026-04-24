@@ -137,7 +137,7 @@ try:
                 selected = choose_portfolio(metrics, relaxed_holdings)
 
             if not selected:
-                st.warning('Market data was incomplete. Refresh the page or try again in a moment.')
+                st.warning('No usable price data was found. Check the ticker list or try a different start date.')
                 st.stop()
 
         selected_prices = prices[selected]
