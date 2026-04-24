@@ -55,7 +55,7 @@ def weights_bar(portfolio: pd.DataFrame):
         text='Weight%',
     )
     fig.update_traces(texttemplate='%{text:.2f}%', textposition='outside')
-    return _base_layout(fig, 'Portfolio Weights', 520)
+    return _base_layout(fig, 'Weight of Each Stock (%)', 520)
 
 
 def sector_donut(portfolio: pd.DataFrame, metrics: pd.DataFrame):
@@ -78,7 +78,7 @@ def sector_donut(portfolio: pd.DataFrame, metrics: pd.DataFrame):
 
 def cumulative_chart(returns: pd.DataFrame, weights: pd.Series, benchmark_returns: pd.Series):
     if weights.empty or returns.empty:
-        growth = pd.DataFrame({'Benchmark': (1 + benchmark_returns).cumprod()})
+        growth = pd.DataFrame({'S&P 500 + TSX 60': (1 + benchmark_returns).cumprod()})
     else:
         portfolio_returns = pd.Series(
             returns[weights.index].values @ weights.values,
