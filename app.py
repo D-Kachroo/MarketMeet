@@ -70,7 +70,7 @@ st.markdown(
 )
 
 st.markdown('# MarketMeet')
-st.caption('Developers: David Kachroo, Tanvi Batchu, and Johan Naresh')
+st.caption('Developed By: David Kachroo, Tanvi Batchu, and Johan Naresh')
 
 with st.sidebar:
     st.subheader('Sidebar Controls')
