@@ -16,15 +16,32 @@ def metric_card(label: str, value: str) -> str:
 
 def _base_layout(fig, title: str, height: int):
     fig.update_layout(
-        title=title,
+        title=dict(
+            text=title,
+            font=dict(color='white')
+        ),
         height=height,
         margin=dict(l=10, r=10, t=60, b=10),
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(255,255,255,0.02)',
-        font=dict(color='#f9fafb'),
+        font=dict(color='white'),
+        legend=dict(
+            font=dict(color='white')
+        )
     )
-    fig.update_xaxes(gridcolor='rgba(255,255,255,0.08)', zerolinecolor='rgba(255,255,255,0.08)')
-    fig.update_yaxes(gridcolor='rgba(255,255,255,0.08)', zerolinecolor='rgba(255,255,255,0.08)')
+
+    fig.update_xaxes(
+        gridcolor='rgba(255,255,255,0.08)',
+        zerolinecolor='rgba(255,255,255,0.08)',
+        color='white'
+    )
+
+    fig.update_yaxes(
+        gridcolor='rgba(255,255,255,0.08)',
+        zerolinecolor='rgba(255,255,255,0.08)',
+        color='white'
+    )
+
     return fig
 
 
@@ -34,7 +51,7 @@ def weights_bar(portfolio: pd.DataFrame):
         x='Weight%',
         y='Ticker',
         orientation='h',
-        title='Portfolio Weights',
+        title='Weight of Each Stock (%)',
         text='Weight%',
     )
     fig.update_traces(texttemplate='%{text:.2f}%', textposition='outside')
