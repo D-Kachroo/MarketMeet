@@ -56,7 +56,6 @@ def weights_bar(portfolio: pd.DataFrame):
     fig.update_traces(texttemplate='%{text:.2f}%', textposition='outside')
     return _base_layout(fig, 'Weight of Each Stock (%)', 520)
 
-
 def sector_donut(portfolio: pd.DataFrame, metrics: pd.DataFrame):
     if portfolio.empty:
         fig = go.Figure()
@@ -69,24 +68,9 @@ def sector_donut(portfolio: pd.DataFrame, metrics: pd.DataFrame):
     metric_view['Ticker'] = metric_view['Ticker'].astype(str)
 
     joined = portfolio_view.merge(metric_view, on='Ticker', how='left')
+    sector = joined.groupby('Sector', as_index=False)['Weight%'].sum().sort_values('Weight%', ascending=False)
 
-    joined['Sector'] = joined['Sector'].apply(
-        lambda value: value if pd.notna(value) and str(value).strip() != '' else 'Sector Data Unavailable'
-    )
-
-    sector = (
-        joined.groupby('Sector', as_index=False, dropna=False)['Weight%']
-        .sum()
-        .sort_values('Weight%', ascending=False)
-    )
-
-    fig = px.pie(
-        sector,
-        names='Sector',
-        values='Weight%',
-        hole=0.58,
-    )
-
+    fig = px.pie(sector, names='Sector', values='Weight%', hole=0.58, title='Sector Allocation')
     return _base_layout(fig, 'Sector Allocation', 420)
 
 
