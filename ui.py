@@ -30,12 +30,12 @@ def _base_layout(fig, title: str, height: int):
 
 def weights_bar(portfolio: pd.DataFrame):
     fig = px.bar(
-        portfolio.sort_values('WeightPct', ascending=True),
-        x='WeightPct',
+        portfolio.sort_values('Weight%', ascending=True),
+        x='Weight (%)',
         y='Ticker',
         orientation='h',
         title='Portfolio Weights',
-        text='WeightPct',
+        text='Weight%',
     )
     fig.update_traces(texttemplate='%{text:.2f}%', textposition='outside')
     return _base_layout(fig, 'Portfolio Weights', 520)
