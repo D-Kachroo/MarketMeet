@@ -159,7 +159,7 @@ try:
         st.subheader('Recommended Portfolio')
 
         view = portfolio.copy()
-        for column in ['PriceCAD', 'Shares', 'ValueCAD', 'WeightPct']:
+        for column in ['Price (CAD)', 'Shares', 'Value (CAD)', 'Weight (%)']:
             view[column] = view[column].map(lambda value: round(float(value), 2))
 
         st.dataframe(view, use_container_width=True, hide_index=True)
