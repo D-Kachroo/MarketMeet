@@ -61,13 +61,13 @@ with st.sidebar:
     st.subheader('Sidebar Controls')
 
     raw_tickers = st.text_area(
-        'Ticker list',
+        'Ticker List:',
         ', '.join(DEFAULT_TICKERS),
         height=180,
     )
 
     start_date = st.date_input(
-        'Start date',
+        'Start Date:',
         value=pd.to_datetime(DEFAULT_START).date(),
         min_value=date(2018, 1, 1),
         max_value=date.today(),
