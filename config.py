@@ -1,8 +1,8 @@
 DEFAULT_TICKERS = [
-    'AAPL', 'ABBV', 'AMZN', 'AXP', 'BK', 'CMCSA', 'COST', 'CSCO', 'DUOL',
-    'GOOG', 'GM', 'LOW', 'ORCL', 'PEP', 'SHOP', 'SLB', 'SPG', 'TD',
-    'SU.TO', 'RY.TO', 'TD.TO', 'SHOP.TO', 'FTG.TO', 'AIM.TO', 'SAP.TO',
-    'AW.TO', 'EXE.TO', 'AUST'
+    'AAPL', 'MSFT', 'NVDA', 'AMZN', 'GOOGL', 'META', 'AVGO', 'TSLA', 'JPM',
+    'V', 'LLY', 'WMT', 'MA', 'NFLX', 'XOM', 'COST', 'ORCL', 'HD', 'PG',
+    'BAC', 'KO', 'CSCO', 'IBM', 'CVX', 'UNH', 'MRK', 'ABBV', 'CRM', 'AMD',
+    'PEP'
 ]
 
 BENCHMARKS = ['^GSPC', '^GSPTSE']
