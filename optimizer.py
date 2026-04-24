@@ -122,12 +122,12 @@ def build_portfolio_table(prices: pd.Series, weights: pd.Series, cadusd_rate: fl
         'PriceCAD': prices_cad.values,
         'Shares': shares.values,
         'ValueCAD': value_cad.values,
-        'WeightPct': (value_cad / value_cad.sum() * 100).values,
+        'Weight%': (value_cad / value_cad.sum() * 100).values,
     })
 
     portfolio['Ticker'] = portfolio['Ticker'].astype(str)
 
-    return portfolio.sort_values('WeightPct', ascending=False).reset_index(drop=True)
+    return portfolio.sort_values('Weight%', ascending=False).reset_index(drop=True)
 
 
 def portfolio_stats(returns: pd.DataFrame, weights: pd.Series, benchmark_returns: pd.Series) -> dict:
