@@ -23,7 +23,6 @@ st.markdown(
     <style>
     [data-testid="stHeader"] {
         background: transparent;
-        height: 0rem;
     }
 
     [data-testid="stToolbar"] {
