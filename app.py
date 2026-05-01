@@ -74,7 +74,6 @@ st.caption('Developed By: David Kachroo, Tanvi Batchu, and Johan Naresh')
 
 with st.sidebar:
     st.subheader('Sidebar Controls')
-    st.sidebar.write(" ")
 
     raw_tickers = st.text_area(
         'Ticker List:',
